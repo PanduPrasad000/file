@@ -1,0 +1,183 @@
+Design and Implement a product cipher using Substitution ciphers
+
+import string
+import random
+
+# --- Caesar Cipher Functions ---
+def caesar_encrypt(text, shift):
+    result = ''
+    for char in text.upper():
+        if char in string.ascii_uppercase:
+            shifted = chr((ord(char) - 65 + shift) % 26 + 65)
+            result += shifted
+        else:
+            result += char
+    return result
+
+def caesar_decrypt(text, shift):
+    return caesar_encrypt(text, -shift)
+
+# --- Substitution Cipher Functions ---
+def generate_substitution_key():
+    alphabet = list(string.ascii_uppercase)
+    shuffled = alphabet.copy()
+    random.shuffle(shuffled)
+    return dict(zip(alphabet, shuffled))
+
+def invert_substitution_key(key):
+    return {v: k for k, v in key.items()}
+
+def substitution_encrypt(text, sub_key):
+    return ''.join(sub_key.get(c, c) for c in text.upper())
+
+def substitution_decrypt(text, sub_key):
+    inverse_key = invert_substitution_key(sub_key)
+    return ''.join(inverse_key.get(c, c) for c in text.upper())
+
+# --- Product Cipher Functions ---
+def product_encrypt(plaintext, caesar_key, substitution_key):
+    step1 = caesar_encrypt(plaintext, caesar_key)
+    step2 = substitution_encrypt(step1, substitution_key)
+    return step2
+
+def product_decrypt(ciphertext, caesar_key, substitution_key):
+    step1 = substitution_decrypt(ciphertext, substitution_key)
+    step2 = caesar_decrypt(step1, caesar_key)
+    return step2
+
+# --- Main Program ---
+def main():
+    print("=== Product Cipher Tool ===")
+    mode = input("Choose mode (E = Encrypt, D = Decrypt): ").strip().upper()
+
+    if mode == 'E':
+        plaintext = input("Enter plaintext: ").strip()
+        caesar_key = int(input("Enter Caesar shift key (e.g., 3): "))
+        substitution_key = generate_substitution_key()
+
+        ciphertext = product_encrypt(plaintext, caesar_key, substitution_key)
+
+        print("\n--- ENCRYPTION COMPLETE ---")
+        print("Ciphertext:", ciphertext)
+        print("Caesar Key:", caesar_key)
+        print("Substitution Key:", substitution_key)
+
+    elif mode == 'D':
+        ciphertext = input("Enter ciphertext: ").strip()
+        caesar_key = int(input("Enter Caesar shift key (e.g., 3): "))
+        sub_key_input = input("Paste substitution key (as Python dict): ")
+        substitution_key = eval(sub_key_input)
+
+        decrypted_text = product_decrypt(ciphertext, caesar_key, substitution_key)
+
+        print("\n--- DECRYPTION COMPLETE ---")
+        print("Decrypted Text:", decrypted_text)
+
+    else:
+        print("Invalid mode. Use 'E' to encrypt or 'D' to decrypt.")
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Encrypt long messages using various modes of operation using AES or DES 
+
+from Crypto.Cipher import AES, DES
+from Crypto.Util.Padding import pad, unpad
+from Crypto.Random import get_random_bytes
+import base64
+
+def encrypt_message(message, key, mode_name='CBC', algorithm='AES'):
+    message = message.encode()
+    key = key[:32].ljust(32, b' ') if algorithm == 'AES' else key[:8].ljust(8, b' ')
+    iv = get_random_bytes(16) if algorithm == 'AES' else get_random_bytes(8)
+
+    mode_map = {
+        'ECB': AES.MODE_ECB if algorithm == 'AES' else DES.MODE_ECB,
+        'CBC': AES.MODE_CBC if algorithm == 'AES' else DES.MODE_CBC,
+        'CFB': AES.MODE_CFB if algorithm == 'AES' else DES.MODE_CFB,
+        'OFB': AES.MODE_OFB if algorithm == 'AES' else DES.MODE_OFB,
+        'CTR': AES.MODE_CTR if algorithm == 'AES' else DES.MODE_CTR
+    }
+
+    mode = mode_map[mode_name.upper()]
+    
+    if mode_name == 'ECB':
+        cipher = AES.new(key, mode) if algorithm == 'AES' else DES.new(key, mode)
+        ct_bytes = cipher.encrypt(pad(message, 16))
+        iv_used = b''
+    elif mode_name == 'CTR':
+        cipher = AES.new(key, mode) if algorithm == 'AES' else DES.new(key, mode)
+        ct_bytes = cipher.encrypt(message)
+        iv_used = cipher.nonce
+    else:
+        cipher = AES.new(key, mode, iv) if algorithm == 'AES' else DES.new(key, mode, iv)
+        ct_bytes = cipher.encrypt(pad(message, 16))
+        iv_used = iv
+
+    return {
+        'ciphertext': base64.b64encode(ct_bytes).decode(),
+        'iv': base64.b64encode(iv_used).decode() if iv_used else '',
+        'key': base64.b64encode(key).decode()
+    }
+
+def decrypt_message(ciphertext_b64, key_b64, iv_b64, mode_name='CBC', algorithm='AES'):
+    ciphertext = base64.b64decode(ciphertext_b64)
+    key = base64.b64decode(key_b64)
+    iv = base64.b64decode(iv_b64) if iv_b64 else None
+
+    mode_map = {
+        'ECB': AES.MODE_ECB if algorithm == 'AES' else DES.MODE_ECB,
+        'CBC': AES.MODE_CBC if algorithm == 'AES' else DES.MODE_CBC,
+        'CFB': AES.MODE_CFB if algorithm == 'AES' else DES.MODE_CFB,
+        'OFB': AES.MODE_OFB if algorithm == 'AES' else DES.MODE_OFB,
+        'CTR': AES.MODE_CTR if algorithm == 'AES' else DES.MODE_CTR
+    }
+
+    mode = mode_map[mode_name.upper()]
+    
+    if mode_name == 'ECB':
+        cipher = AES.new(key, mode) if algorithm == 'AES' else DES.new(key, mode)
+        pt = unpad(cipher.decrypt(ciphertext), 16)
+    elif mode_name == 'CTR':
+        cipher = AES.new(key, mode, nonce=iv) if algorithm == 'AES' else DES.new(key, mode, nonce=iv)
+        pt = cipher.decrypt(ciphertext)
+    else:
+        cipher = AES.new(key, mode, iv) if algorithm == 'AES' else DES.new(key, mode, iv)
+        pt = unpad(cipher.decrypt(ciphertext), 16)
+
+    return pt.decode()
+
+# --- Example usage ---
+if __name__ == "__main__":
+    message = input("Enter your long message: ")
+    key = input("Enter a key (min 8 chars for DES, 16-32 for AES): ").encode()
+    mode = input("Choose mode (ECB/CBC/CFB/OFB/CTR): ")
+    algo = input("Choose algorithm (AES or DES): ").upper()
+
+    result = encrypt_message(message, key, mode_name=mode, algorithm=algo)
+    print("\n--- ENCRYPTED ---")
+    print("Ciphertext:", result['ciphertext'])
+    print("Key:", result['key'])
+    print("IV:", result['iv'])
+
+    # Optional: Decrypt immediately
+    decrypted = decrypt_message(result['ciphertext'], result['key'], result['iv'], mode_name=mode, algorithm=algo)
+    print("\n--- DECRYPTED ---")
+    print("Decrypted:", decrypted)
