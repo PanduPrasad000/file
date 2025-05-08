@@ -1,0 +1,185 @@
+Here’s a **step-by-step guide** to study network security with a focus on:
+
+* **IPSec setup**
+* **Snort IDS log analysis**
+* **GPG for email encryption**
+
+These steps are ideal for cybersecurity students or lab-based learning in VMs like **Kali Linux**, **Ubuntu**, or **Parrot OS**.
+
+---
+
+## 🔐 a) Set up IPSec under Linux using `strongSwan`
+
+### ✅ Goal: Secure communication between two Linux machines using IPSec (ESP encryption with authentication)
+
+### ⚙️ Tools: `strongSwan` (IPSec VPN software)
+
+### 📌 Steps (run on both machines — or 2 VMs):
+
+1. **Install strongSwan:**
+
+   ```bash
+   sudo apt update
+   sudo apt install strongswan
+   ```
+
+2. **Edit IPsec config on both machines** (`/etc/ipsec.conf`):
+   Example for VM1 (left side):
+
+   ```ini
+   config setup
+       charondebug="ike 2, knl 2, cfg 2, net 2, esp 2"
+
+   conn net-to-net
+       left=192.168.1.10       # VM1 IP
+       leftsubnet=192.168.1.0/24
+       right=192.168.1.20      # VM2 IP
+       rightsubnet=192.168.2.0/24
+       auto=start
+       authby=secret
+   ```
+
+3. **Set a shared key in `/etc/ipsec.secrets`:**
+
+   ```
+   192.168.1.10 192.168.1.20 : PSK "strongpassword"
+   ```
+
+4. **Restart IPSec service:**
+
+   ```bash
+   sudo ipsec restart
+   sudo ipsec statusall
+   ```
+
+5. **Test connection:**
+
+   ```bash
+   ping <remote VM IP>
+   sudo ip xfrm state  # to view encryption status
+   ```
+
+---
+
+## 🧱 b) Set up Snort and study logs
+
+### ✅ Goal: Intrusion detection using Snort and analyze generated alerts.
+
+### ⚙️ Tool: `Snort` IDS
+
+### 📌 Steps:
+
+1. **Install Snort:**
+
+   ```bash
+   sudo apt install snort
+   ```
+
+2. **Configure Snort:**
+   Set your home network in `/etc/snort/snort.conf`:
+
+   ```bash
+   var HOME_NET 192.168.1.0/24
+   ```
+
+3. **Run Snort in IDS mode:**
+
+   ```bash
+   sudo snort -A console -i eth0 -c /etc/snort/snort.conf
+   ```
+
+4. **Generate test traffic:**
+
+   ```bash
+   ping -c 1 <target_ip>
+   curl http://<target_ip>
+   ```
+
+5. **Check logs:**
+
+   * Default logs: `/var/log/snort/`
+   * Alert format: `alert.ids`, `snort.log.*`
+
+6. **Read alerts (example):**
+
+   ```bash
+   cat /var/log/snort/alert
+   ```
+
+7. **Optional GUI:** Use tools like **BASE**, **Snorby**, or **ELK stack** to visualize logs.
+
+---
+
+## 📧 c) Explore GPG for Email Security
+
+### ✅ Goal: Use GPG to encrypt, sign, and decrypt email messages securely.
+
+### ⚙️ Tool: `gpg` (GNU Privacy Guard)
+
+### 📌 Steps:
+
+1. **Install GPG (if needed):**
+
+   ```bash
+   sudo apt install gnupg
+   ```
+
+2. **Generate your GPG key pair:**
+
+   ```bash
+   gpg --full-generate-key
+   ```
+
+   * Choose RSA and RSA
+   * Key size: 2048 or 4096
+   * Enter name, email, and passphrase
+
+3. **List keys:**
+
+   ```bash
+   gpg --list-keys
+   ```
+
+4. **Export your public key to share:**
+
+   ```bash
+   gpg --armor --export your_email@example.com > pubkey.asc
+   ```
+
+5. **Import a friend's key (simulate):**
+
+   ```bash
+   gpg --import friend_pubkey.asc
+   ```
+
+6. **Encrypt a message:**
+
+   ```bash
+   gpg --output message.gpg --encrypt --recipient friend@example.com message.txt
+   ```
+
+7. **Decrypt a received message:**
+
+   ```bash
+   gpg --output decrypted.txt --decrypt message.gpg
+   ```
+
+8. **Digitally sign a message:**
+
+   ```bash
+   gpg --clearsign message.txt
+   ```
+
+---
+
+## 📄 Summary Table
+
+| Task                   | Tool       | Goal                            |
+| ---------------------- | ---------- | ------------------------------- |
+| IPSec Setup            | strongSwan | Encrypted network communication |
+| Snort IDS              | Snort      | Detect suspicious traffic       |
+| Email Security via GPG | GPG        | Encrypt & sign email messages   |
+
+---
+
+Would you like a printable `.pdf` lab guide or `.docx` lab report template for submission?
